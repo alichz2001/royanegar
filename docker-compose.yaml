@@ -87,7 +87,7 @@ services:
   event_collector_service_1:
     hostname: event_collector_service_1
     container_name: event_collector_service_1
-    build: ./event_collector_service/
+    build: ./services/event_collector_service/
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -97,7 +97,7 @@ services:
   event_collector_service_2:
     hostname: event_collector_service_2
     container_name: event_collector_service_2
-    build: ./event_collector_service/
+    build: ./services/event_collector_service/
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -107,7 +107,7 @@ services:
   event_collector_service_3:
     hostname: event_collector_service_3
     container_name: event_collector_service_3
-    build: ./event_collector_service/
+    build: ./services/event_collector_service/
     depends_on:
       clickhouse:
         condition: service_healthy
