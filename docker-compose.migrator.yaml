@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  migrator:
+    build:
+      dockerfile: ./builds/migrator/Dockerfile
+    volumes:
+      - ./schema/:/migrations/
+      - ./migrator.sh:/migrator.sh
+    command: chmod +x /migrator.sh
+    entrypoint: /migrator.sh
+    network_mode: host
+
