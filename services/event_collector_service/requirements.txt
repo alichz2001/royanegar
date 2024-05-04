@@ -1,2 +1,2 @@
-clickhouse_connect
 flask
+confluent-kafka

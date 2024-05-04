@@ -1,1 +1,0 @@
-drop table if exists aggregator_worker_states;
