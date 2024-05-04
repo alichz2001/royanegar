@@ -107,7 +107,7 @@ services:
       # KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
     healthcheck:
       test: kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1
-      interval: 1s
+      interval: 10s
       timeout: 60s
       retries: 60
     network_mode: host
@@ -115,23 +115,24 @@ services:
     #   - royanegar
 
 
-  haproxy:
-    image: 'haproxy'
-    restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      FD_SETSIZE: 10
-    volumes:
-      - type: bind
-        source: ./haproxy.cfg
-        target: /usr/local/etc/haproxy/haproxy.cfg
-    depends_on:
-      postgres:
-        condition: service_healthy
-    network_mode: host
-    # networks:
-    #   - royanegar
+  # haproxy:
+  #   image: 'haproxy'
+  #   restart: always
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     FD_SETSIZE: 10
+  #   volumes:
+  #     - type: bind
+  #       source: ./haproxy.cfg
+  #       target: /usr/local/etc/haproxy/haproxy.cfg
+  #   depends_on:
+  #     - event_collector_service_1
+  #     # postgres:
+  #     #   condition: service_healthy
+  #   network_mode: host
+  #   # networks:
+  #   #   - royanegar
 
   event_collector_service_1:
     hostname: event_collector_service_1
@@ -150,17 +151,36 @@ services:
 
   watchtime_aggregator_service_1:
     build: ./services/watchtime_aggregator_service/
+    environment:
+      DB_CH_USER: ${DB_CH_USER}
+      DB_CH_PASSWORD: ${DB_CH_PASSWORD}
+      DB_CH_HOSTNAME: ${DB_CH_HOSTNAME}
+      DB_CH_PORT: ${DB_CH_PORT}
+      DB_CH_DATABASE_NAME: ${DB_CH_DATABASE_NAME}
+      DB_PG_USER: ${DB_PG_USER}
+      DB_PG_PASSWORD: ${DB_PG_PASSWORD}
+      DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
+      DB_PG_PORT: ${DB_PG_PORT}
+      DB_PG_DATABASE_NAME: ${DB_PG_DATABASE_NAME}
     depends_on:
       postgres:
         condition: service_healthy
       clickhouse:
         condition: service_healthy
+    network_mode: host
 
   watchtime_api_service_1:
     build: ./services/watchtime_api_service/
+    environment:
+      DB_PG_USER: ${DB_PG_USER}
+      DB_PG_PASSWORD: ${DB_PG_PASSWORD}
+      DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
+      DB_PG_PORT: ${DB_PG_PORT}
+      DB_PG_DATABASE_NAME: ${DB_PG_DATABASE_NAME}
     depends_on:
       postgres:
         condition: service_healthy
+    network_mode: host
       
 
 
@@ -169,6 +189,8 @@ services:
     restart: always
     depends_on:
       - event_collector_service_1
+    extra_hosts:
+        - "host.docker.internal:host-gateway"
     network_mode: host
 
 
