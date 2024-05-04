@@ -69,118 +69,107 @@ services:
     entrypoint: /migrator.sh
     network_mode: host
 
-  # zookeeper:
-  #   image: confluentinc/cp-zookeeper
-  #   hostname: zookeeper
-  #   ports:
-  #     - "2181:2181"
-  #   environment:
-  #     ZOOKEEPER_CLIENT_PORT: 2181
-  #     ZOOKEEPER_TICK_TIME: 2000
-  #   network_mode: host
-  #   # networks:
-  #   #   - royanegar
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    network_mode: host
+    # networks:
+    #   - royanegar
 
-  # broker:
-  #   image: confluentinc/cp-server
-  #   hostname: broker
-  #   restart: always
-  #   depends_on:
-  #     - zookeeper
-  #   ports:
-  #     - "9092:9092"
-  #     - "9101:9101"
-  #   environment:
-  #     KAFKA_BROKER_ID: 1
-  #     KAFKA_ZOOKEEPER_CONNECT: 'localhost:2181'
-  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-  #     # KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  #     # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-  #     KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-  #     KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-  #     # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-  #     # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-  #     # KAFKA_JMX_PORT: 9101
-  #     # KAFKA_JMX_HOSTNAME: localhost
-  #     # KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-  #   network_mode: host
-  #   # networks:
-  #   #   - royanegar
-
-  
-  
-  # migrator:
-  #   image: curl
-  #   restart: never
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #   entrypoint: "sh /migrations.sh"
-  #   volumes:
-  #     - type: bind
-  #       source: ./migrations.sh
-  #       target: /migrations.sh
-  #   networks:
-  #     - royanegar
-
-  # haproxy:
-  #   image: 'haproxy'
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     FD_SETSIZE: 10
-  #   volumes:
-  #     - type: bind
-  #       source: ./haproxy.cfg
-  #       target: /usr/local/etc/haproxy/haproxy.cfg
-  #   networks:
-  #     - royanegar
-
-  # event_collector_service_1:
-  #   hostname: event_collector_service_1
-  #   container_name: event_collector_service_1
-  #   build: ./services/event_collector_service/
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #   networks:
-  #     - royanegar
-
-  # event_collector_service_2:
-  #   hostname: event_collector_service_2
-  #   container_name: event_collector_service_2
-  #   build: ./services/event_collector_service/
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #   networks:
-  #     - royanegar
-
-  # event_collector_service_3:
-  #   hostname: event_collector_service_3
-  #   container_name: event_collector_service_3
-  #   build: ./services/event_collector_service/
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #   networks:
-  #     - royanegar
+  broker:
+    image: confluentinc/cp-server
+    hostname: broker
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      # KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # KAFKA_JMX_PORT: 9101
+      # KAFKA_JMX_HOSTNAME: localhost
+      # KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    healthcheck:
+      test: kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1
+      interval: 1s
+      timeout: 60s
+      retries: 60
+    network_mode: host
+    # networks:
+    #   - royanegar
 
 
-  # app:
-  #   image: sajadrahimi/backend-assignement
-  #   restart: always
-  #   depends_on:
-  #     - event_collector_service_1
-  #   extra_hosts:
-  # #       - "host.docker.internal:host-gateway"
-  # depends_on:
-  #     cassandra-init-keyspace:
-  #       condition: service_completed_successfully
-  
+  haproxy:
+    image: 'haproxy'
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      FD_SETSIZE: 10
+    volumes:
+      - type: bind
+        source: ./haproxy.cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      postgres:
+        condition: service_healthy
+    network_mode: host
+    # networks:
+    #   - royanegar
+
+  event_collector_service_1:
+    hostname: event_collector_service_1
+    container_name: event_collector_service_1
+    build: ./services/event_collector_service/
+    environment:
+      PORT: 8000
+      KAFKA_SERVERS: localhost:9092
+    depends_on:
+      broker:
+        condition: service_healthy
+    network_mode: host
+
+    # networks:
+    #   - royanegar
+
+  watchtime_aggregator_service_1:
+    build: ./services/watchtime_aggregator_service/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  watchtime_api_service_1:
+    build: ./services/watchtime_api_service/
+    depends_on:
+      postgres:
+        condition: service_healthy
+      
+
+
+  event_publisher:
+    image: sajadrahimi/backend-assignement
+    restart: always
+    depends_on:
+      - event_collector_service_1
+    network_mode: host
 
 
 volumes:
