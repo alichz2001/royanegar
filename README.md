@@ -35,3 +35,10 @@ https://clickhouse.com/docs/en/guides/inserting-data#insert-large-batches
 https://clickhouse.com/docs/en/operations/settings/settings#async-insert
 
 https://clickhouse.com/docs/en/integrations/python#client-raw_insert-method
+
+
+https://github.com/confluentinc/cp-all-in-one/blob/7.5.0-post/cp-all-in-one/README.md
+
+https://www.highlight.io/blog/clickhouse-materialized-views
+
+https://clickhouse.com/blog/using-materialized-views-in-clickhouse

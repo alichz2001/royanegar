@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   clickhouse:
-    image: yandex/clickhouse-server
+    image: clickhouse/clickhouse-server
     restart: always
     environment: 
       CLICKHOUSE_DB: ${DB_CH_DATABASE_NAME}
@@ -15,26 +15,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    volumes:
-      - clickhosue_vol:/var/lib/clickhouse
+    # volumes:
+    #   - clickhosue_vol:/var/lib/clickhouse
     ports:
       - "${DB_CH_PORT}:8123"
-    networks: 
-      - royanegar
-
-  # migrator:
-  #   image: curl
-  #   restart: never
-  #   depends_on:
-  #     clickhouse:
-  #       condition: service_healthy
-  #   entrypoint: "sh /migrations.sh"
-  #   volumes:
-  #     - type: bind
-  #       source: ./migrations.sh
-  #       target: /migrations.sh
-  #   networks:
-  #     - royanegar
+      - "9000:9000"
+    network_mode: host
+    # networks: 
+    #   - royanegar
 
   postgres:
     image: postgres:latest
@@ -43,8 +31,8 @@ services:
       POSTGRES_DB: ${DB_PG_DATABASE_NAME}
       POSTGRES_USER: ${DB_PG_USER}
       POSTGRES_PASSWORD: ${DB_PG_PASSWORD}
-    volumes:
-    - postgres_vol:/var/lib/postgresql/data
+    # volumes:
+    # - postgres_vol:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-q", "-d", "${DB_PG_DATABASE_NAME}", "-U", "${DB_PG_USER}"]
       interval: 10s
@@ -52,23 +40,80 @@ services:
       retries: 3
     ports:
       - "${DB_PG_PORT}:5432"
-    networks: 
-      - royanegar
+    network_mode: host
+    # networks: 
+    #   - royanegar
 
-  # kafka:
-  #   image: 'bitnami/kafka:latest'
-  #   environment:
-  #     - KAFKA_CFG_NODE_ID=0
-  #     - KAFKA_CFG_PROCESS_ROLES=controller,broker
-  #     - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-  #     - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-  #     - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
-  #     - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-  #   healthcheck:
-  #     test: /kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server kafka:9092 || exit 1
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 3
+  migrator:
+    image: migrate/migrate
+    environment:
+      DB_CH_DATABASE_NAME: ${DB_CH_DATABASE_NAME}
+      DB_CH_USER: ${DB_CH_USER}
+      DB_CH_PASSWORD: ${DB_CH_PASSWORD}
+      DB_CH_HOSTNAME: localhost
+      DB_CH_PORT: ${DB_CH_PORT}
+      DB_PG_DATABASE_NAME: ${DB_PG_DATABASE_NAME}
+      DB_PG_USER: ${DB_PG_USER}
+      DB_PG_PASSWORD: ${DB_PG_PASSWORD}
+      DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
+      DB_PG_PORT: ${DB_PG_PORT}
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./schema/:/migrations/
+      - ./migrator.sh:/migrator.sh
+    command: chmod +x /migrator.sh
+    entrypoint: /migrator.sh
+    network_mode: host
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    network_mode: host
+    # networks:
+    #   - royanegar
+
+  broker:
+    image: confluentinc/cp-server
+    hostname: broker
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'localhost:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      # KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      # KAFKA_JMX_PORT: 9101
+      # KAFKA_JMX_HOSTNAME: localhost
+      # KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    healthcheck:
+      test: kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1
+      interval: 30s
+      timeout: 60s
+      retries: 60
+    network_mode: host
+    # networks:
+    #   - royanegar
+
 
   haproxy:
     image: 'haproxy'
@@ -81,48 +126,73 @@ services:
       - type: bind
         source: ./haproxy.cfg
         target: /usr/local/etc/haproxy/haproxy.cfg
-    networks:
-      - royanegar
+    depends_on:
+      - event_collector_service_1
+      # postgres:
+      #   condition: service_healthy
+    network_mode: host
+    # networks:
+    #   - royanegar
 
   event_collector_service_1:
     hostname: event_collector_service_1
     container_name: event_collector_service_1
-    build: ./event_collector_service/
+    build: ./services/event_collector_service/
+    environment:
+      PORT: 8010
+      KAFKA_SERVERS: localhost:9092
     depends_on:
+      broker:
+        condition: service_healthy
+    network_mode: host
+
+    # networks:
+    #   - royanegar
+
+  watchtime_aggregator_service_1:
+    build: ./services/watchtime_aggregator_service/
+    environment:
+      DB_CH_USER: ${DB_CH_USER}
+      DB_CH_PASSWORD: ${DB_CH_PASSWORD}
+      DB_CH_HOSTNAME: ${DB_CH_HOSTNAME}
+      DB_CH_PORT: ${DB_CH_PORT}
+      DB_CH_DATABASE_NAME: ${DB_CH_DATABASE_NAME}
+      DB_PG_USER: ${DB_PG_USER}
+      DB_PG_PASSWORD: ${DB_PG_PASSWORD}
+      DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
+      DB_PG_PORT: ${DB_PG_PORT}
+      DB_PG_DATABASE_NAME: ${DB_PG_DATABASE_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
       clickhouse:
         condition: service_healthy
-    networks:
-      - royanegar
+    network_mode: host
 
-  event_collector_service_2:
-    hostname: event_collector_service_2
-    container_name: event_collector_service_2
-    build: ./event_collector_service/
+  watchtime_api_service_1:
+    build: ./services/watchtime_api_service/
+    environment:
+      PORT: 8001
+      DB_PG_USER: ${DB_PG_USER}
+      DB_PG_PASSWORD: ${DB_PG_PASSWORD}
+      DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
+      DB_PG_PORT: ${DB_PG_PORT}
+      DB_PG_DATABASE_NAME: ${DB_PG_DATABASE_NAME}
     depends_on:
-      clickhouse:
+      postgres:
         condition: service_healthy
-    networks:
-      - royanegar
-
-  event_collector_service_3:
-    hostname: event_collector_service_3
-    container_name: event_collector_service_3
-    build: ./event_collector_service/
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    networks:
-      - royanegar
+    network_mode: host
+      
 
 
-  app:
+  event_publisher:
     image: sajadrahimi/backend-assignement
     restart: always
     depends_on:
       - event_collector_service_1
     extra_hosts:
         - "host.docker.internal:host-gateway"
-  
+    network_mode: host
 
 
 volumes:

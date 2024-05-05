@@ -1,0 +1,3 @@
+clickhouse_connect
+psycopg
+confluent-kafka
