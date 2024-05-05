@@ -12,7 +12,7 @@ test:
 
 up: setup
 	@echo "Starting Docker Compose..."
-	docker-compose -f ./docker-compose.yaml up --build
+	docker-compose -f ./docker-compose.yaml up --build --force-recreate
 	@echo "Docker Compose is up and running."
 
 down:

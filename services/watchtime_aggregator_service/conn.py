@@ -22,7 +22,6 @@ def get_pg_connection():
         DB_PG_PORT,
         DB_PG_DATABASE_NAME
     )
-    print(conn_str)
     conn = psycopg.connect(conn_str)
     return conn
 

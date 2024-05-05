@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 
+PORT = os.environ['PORT']
 DB_PG_HOSTNAME = os.environ['DB_PG_HOSTNAME']
 DB_PG_PORT = os.environ['DB_PG_PORT']
 DB_PG_USER = os.environ['DB_PG_USER']
@@ -110,7 +111,4 @@ def user_slug_state():
 
 
 if __name__ == "__main__":
-
-    app.run(host='0.0.0.0', port=8001)
-    
-    print("Server stopped.") 
+    app.run(host='0.0.0.0', port=PORT)

@@ -107,7 +107,7 @@ services:
       # KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
     healthcheck:
       test: kafka-cluster cluster-id --bootstrap-server localhost:9092 || exit 1
-      interval: 10s
+      interval: 30s
       timeout: 60s
       retries: 60
     network_mode: host
@@ -115,31 +115,31 @@ services:
     #   - royanegar
 
 
-  # haproxy:
-  #   image: 'haproxy'
-  #   restart: always
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     FD_SETSIZE: 10
-  #   volumes:
-  #     - type: bind
-  #       source: ./haproxy.cfg
-  #       target: /usr/local/etc/haproxy/haproxy.cfg
-  #   depends_on:
-  #     - event_collector_service_1
-  #     # postgres:
-  #     #   condition: service_healthy
-  #   network_mode: host
-  #   # networks:
-  #   #   - royanegar
+  haproxy:
+    image: 'haproxy'
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      FD_SETSIZE: 10
+    volumes:
+      - type: bind
+        source: ./haproxy.cfg
+        target: /usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - event_collector_service_1
+      # postgres:
+      #   condition: service_healthy
+    network_mode: host
+    # networks:
+    #   - royanegar
 
   event_collector_service_1:
     hostname: event_collector_service_1
     container_name: event_collector_service_1
     build: ./services/event_collector_service/
     environment:
-      PORT: 8000
+      PORT: 8010
       KAFKA_SERVERS: localhost:9092
     depends_on:
       broker:
@@ -172,6 +172,7 @@ services:
   watchtime_api_service_1:
     build: ./services/watchtime_api_service/
     environment:
+      PORT: 8001
       DB_PG_USER: ${DB_PG_USER}
       DB_PG_PASSWORD: ${DB_PG_PASSWORD}
       DB_PG_HOSTNAME: ${DB_PG_HOSTNAME}
