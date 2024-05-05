@@ -26,12 +26,15 @@ def do_aggregate_user_watchtimes(conn, start_timestamp, end_timestamp):
             "user",
             slug,
             at,
+            ts,
             lagInFrame(at) over (partition by ("user", slug) order by ts) as prev_at,
             if(prev_at == 0 or prev_at > at, 0, at - prev_at) as duration
         from watch_events
+    ), filter_date as(
+        select * from cte_with_prev_at
         where ts between '%s' and '%s'
     ), aggregated_data as(
-        select "user", sum(duration) as added_watchtime from cte_with_prev_at
+        select "user", sum(duration) as added_watchtime from filter_date
         group by ("user")
     )
     select * from aggregated_data

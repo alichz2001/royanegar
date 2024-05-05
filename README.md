@@ -1,44 +1,79 @@
+
 # Roya Negar Task
 
 ---
 
 
+## up and run
 
-bottlenecks:
+```
+make up
+```
 
-- live concurrent users that sent event.
+
+## API doc
+
+postman
+
+
+## bottlenecks:
+
+- live concurrent event publisher.
+- aggregating so many events in a psudo-live manner.
+- store watchtime data for high concurrent read.
+
+## Tools
+
+#### ClickHouse
+
+- where it used? 
+	- for storing events in disk and aggregate psudo-live data from events.
+- why clickhouse?
+    - we need some characteristic for storage of this data:
+        1. high throughput
+        2. efficiency in aggregating data
+        3. support scaling, partitioning, backing up of data
+        4. rich support for streaming to and from data to prevent memory peak in services.
+        5. supporting integration with other tools like kafka
+
+### PostgreSQL
+	 
+- where it used? 
+	- for storing aggregated data for end-user. as key-value store
+- why clickhouse?
+    - we need some characteristic for storage of this data:
+        1. consistency
+        2. efficient index for fast retrieval data (hash index)
+        3. support scaling, partitioning, backing up of data
+        4. support efficient 'upsert' data for atomic update so many data.
+
+
+### kafka
+
+- where it used? 
+	- for queuing and storing events.
+- why clickhouse?
+    - characteristics we need:
+        1. high throughput
+        2. durability of data
+        3. support scaling, partitioning of data
+        4. efficient handling of buffers.
+
+### HAProxy
+
+- where it used? 
+	- for route client connection to target event_collector_service
+- why clickhouse?
+    - characteristics we need:
+        1. support L4 proxy to avoid unnecessary application layer calculation in proxy layer.
+        2. efficiency.
+        3. optimize and feature reach for future needs.
+        
 
 ### notes
 
-- 'Events protocol' HTTP is not best choice for client event sending protocol. becouse of HTTP protocol itsel overhead(useless headers in every published event).
+##### Event publishing protocol 
+HTTP is not best choice for client event sending protocol. because of HTTP protocol overhead(useless headers in every published event).
 for this problem maybe websocket or any other application layer protocols with less overhead is better choice.
-- 'Events encoding', JSON is not best choice for encoding protocl becouse of encoding and decoding overhead and many useless metadata. messagepack or protobuf or even CSV are better options.
-
-
-### Tools
-
-#### ClickHouse
-'where it used?' for storing events in disk and aggregate psudo-live data from events.
-'why clickhouse?' 
-    - we need some characteristic for storage of this data:
-        1. high throuput
-        2. efficiency in aggregationing data
-        3. suppurt scaling, partitioning, backuping of data
-        4. rich support for streaing to and from data to prevent memmory peack in services.
-        
-
-
-
-
-
-https://clickhouse.com/docs/en/guides/inserting-data#insert-large-batches
-https://clickhouse.com/docs/en/operations/settings/settings#async-insert
-
-https://clickhouse.com/docs/en/integrations/python#client-raw_insert-method
-
-
-https://github.com/confluentinc/cp-all-in-one/blob/7.5.0-post/cp-all-in-one/README.md
-
-https://www.highlight.io/blog/clickhouse-materialized-views
-
-https://clickhouse.com/blog/using-materialized-views-in-clickhouse
+##### Events encoding 
+JSON is not best choice for encoding protocol because of encoding and decoding overhead and many useless metadata and characters. messagepack or protobuf or even CSV are better options.

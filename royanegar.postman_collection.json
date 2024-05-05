@@ -1,0 +1,151 @@
+{
+	"info": {
+		"_postman_id": "ad767e88-3015-4f97-b3a8-e34570281c43",
+		"name": "royanegar",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6252097"
+	},
+	"item": [
+		{
+			"name": "fetch user watchtime",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{watchtime_api_server}}/api/v1/watchtime/user?user=1",
+					"host": [
+						"{{watchtime_api_server}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"watchtime",
+						"user"
+					],
+					"query": [
+						{
+							"key": "user",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "fetch user_slug watchtime",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{watchtime_api_server}}/api/v1/watchtime/user_slug?user=1&slug=1",
+					"host": [
+						"{{watchtime_api_server}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"watchtime",
+						"user_slug"
+					],
+					"query": [
+						{
+							"key": "user",
+							"value": "1"
+						},
+						{
+							"key": "slug",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "fetch user_slug state",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{watchtime_api_server}}/api/v1/state/user_slug?user=1&slug=1",
+					"host": [
+						"{{watchtime_api_server}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"state",
+						"user_slug"
+					],
+					"query": [
+						{
+							"key": "user",
+							"value": "1"
+						},
+						{
+							"key": "slug",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "fetch slug watchtime",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{watchtime_api_server}}/api/v1/watchtime/slug?slug=1",
+					"host": [
+						"{{watchtime_api_server}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"watchtime",
+						"slug"
+					],
+					"query": [
+						{
+							"key": "slug",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "watchtime_api_server",
+			"value": "localhost:8001",
+			"type": "string"
+		}
+	]
+}

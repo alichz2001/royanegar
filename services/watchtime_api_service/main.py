@@ -18,6 +18,7 @@ def get_db_connection():
                             port=DB_PG_PORT,
                             user=DB_PG_USER,
                             password=DB_PG_PASSWORD)
+    conn.set_isolation_level(0)
     return conn
 
 
