@@ -53,11 +53,21 @@ postman
 - where it used? 
 	- for queuing and storing events.
 - why clickhouse?
-    - we need some characteristic for storage of this data:
+    - characteristics we need:
         1. high throughput
         2. durability of data
         3. support scaling, partitioning of data
         4. efficient handling of buffers.
+
+### HAProxy
+
+- where it used? 
+	- for route client connection to target event_collector_service
+- why clickhouse?
+    - characteristics we need:
+        1. support L4 proxy to avoid unnecessary application layer calculation in proxy layer.
+        2. efficiency.
+        3. optimize and feature reach for future needs.
         
 
 ### notes
