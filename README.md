@@ -13,7 +13,7 @@ make up
 
 ## API doc
 
-postman
+[postman](https://github.com/alichz2001/royanegar/blob/main/royanegar.postman_collection.json)
 
 
 ## bottlenecks:
